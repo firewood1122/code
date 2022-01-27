@@ -73,7 +73,7 @@ const App = () => {
    */
   const renderBookCase = () => {
     const width = 40;
-    const height = 59;
+    const height = 60;
     const thickness = 2;
     const depth = 10;
 
@@ -98,13 +98,16 @@ const App = () => {
 
       // 书架层板
       const bookCase = new Three.Object3D();
-      for (let i = 0; i < 4; i++) {
+      const num = 4;
+      const distance = (height - thickness * num) / (num - 1);
+      for (let i = 0; i < num; i++) {
         const itemGeo = new Three.BoxGeometry(
           width,
           thickness,
           depth - thickness
         );
         const item = new Three.Mesh(itemGeo, material);
+        item.position.y = (height - thickness) / 2 - (distance + thickness) * i;
         item.position.z = depth / 2;
         bookCase.add(item);
       }
