@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import * as Three from "three";
-import { MapControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import woodPng from "./imgs/wood.jpg";
 import "./app.scss";
 
 const App = () => {
@@ -38,9 +39,9 @@ const App = () => {
       100,
       target.clientWidth / target.clientHeight,
       1,
-      200
+      1000
     );
-    camera.position.set(0, 0, 200);
+    camera.position.set(0, 0, 60);
     camera.lookAt(0, 0, 0);
 
     // 初始化渲染器
@@ -53,8 +54,8 @@ const App = () => {
     target.appendChild(renderer.domElement);
 
     // 初始化控制器
-    const controls = new MapControls(camera, renderer.domElement);
-    controls.enableRotate = false;
+    const controls = new OrbitControls(camera, renderer.domElement);
+    // controls.enableRotate = false;
     controls.minDistance = 10;
     controls.maxDistance = 200;
     controls.screenSpacePanning = true;
@@ -67,8 +68,58 @@ const App = () => {
     controlsObj.current = controls;
   };
 
+  /**
+   * 渲染书架
+   */
+  const renderBookCase = () => {
+    const width = 40;
+    const height = 59;
+    const thickness = 2;
+    const depth = 10;
+
+    new Three.TextureLoader().load(woodPng, (texture) => {
+      const material = new Three.MeshBasicMaterial({ map: texture });
+
+      // 书架背面
+      const backGeo = new Three.BoxGeometry(width, height, thickness);
+      const back = new Three.Mesh(backGeo, material);
+
+      // 书架左侧
+      const leftGeo = new Three.BoxGeometry(thickness, height, depth);
+      const left = new Three.Mesh(leftGeo, material);
+      left.position.x = -(width + thickness) / 2;
+      left.position.z = (depth - thickness) / 2;
+
+      // 书架右侧
+      const rightGeo = new Three.BoxGeometry(thickness, height, depth);
+      const right = new Three.Mesh(rightGeo, material);
+      right.position.x = (width + thickness) / 2;
+      right.position.z = (depth - thickness) / 2;
+
+      // 书架层板
+      const bookCase = new Three.Object3D();
+      for (let i = 0; i < 4; i++) {
+        const itemGeo = new Three.BoxGeometry(
+          width,
+          thickness,
+          depth - thickness
+        );
+        const item = new Three.Mesh(itemGeo, material);
+        item.position.z = depth / 2;
+        bookCase.add(item);
+      }
+
+      bookCase.add(back);
+      bookCase.add(left);
+      bookCase.add(right);
+      sceneObj.current.add(bookCase);
+      animate();
+    });
+  };
+
   useEffect(() => {
     initRenderer();
+    renderBookCase();
   }, []);
 
   return (
