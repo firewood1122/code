@@ -2,7 +2,15 @@ import React, { useRef, useEffect } from "react";
 import * as Three from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import woodPng from "./imgs/wood.jpg";
+import bookPng from "./imgs/book.jpg";
+import bookSidePng from "./imgs/book-side.jpg";
+import bookList from "./data.json";
 import "./app.scss";
+
+interface BookItemType {
+  title: string;
+  url: string;
+}
 
 const App = () => {
   const mapDom = useRef(null);
@@ -69,6 +77,17 @@ const App = () => {
   };
 
   /**
+   * 加载纹理
+   */
+  const loadTexture = (img: string) => {
+    return new Promise((resolve) => {
+      new Three.TextureLoader().load(img, (texture) => {
+        resolve(texture);
+      });
+    });
+  };
+
+  /**
    * 渲染书架
    */
   const renderBookCase = () => {
@@ -110,6 +129,23 @@ const App = () => {
         item.position.y = (height - thickness) / 2 - (distance + thickness) * i;
         item.position.z = depth / 2;
         bookCase.add(item);
+
+        // 渲染书本
+        if (i > 0) {
+          const bookHeight = distance - 4;
+          const bookDepth = depth - thickness;
+          bookList[i - 1].forEach((bookItem: BookItemType, index: number) => {
+            renderBook(
+              width / 2,
+              item.position.y + thickness / 2,
+              item.position.z,
+              bookHeight,
+              bookDepth,
+              index,
+              bookItem
+            );
+          });
+        }
       }
 
       bookCase.add(back);
@@ -118,6 +154,44 @@ const App = () => {
       sceneObj.current.add(bookCase);
       animate();
     });
+  };
+
+  /**
+   * 渲染书本
+   */
+  const renderBook = async (
+    x: number,
+    y: number,
+    z: number,
+    height: number,
+    depth: number,
+    index: number,
+    item: BookItemType
+  ) => {
+    const [book, bookSide] = await Promise.all([
+      loadTexture(bookPng),
+      loadTexture(bookSidePng),
+    ]);
+
+    // 书本材质
+    const width = 3;
+    const bookMate = new Three.MeshBasicMaterial({ map: book });
+    const bookSideMate = new Three.MeshBasicMaterial({ map: bookSide });
+
+    const backGeo = new Three.BoxGeometry(width, height, depth);
+    const bookMesh = new Three.Mesh(backGeo, [
+      bookSideMate,
+      bookSideMate,
+      bookSideMate,
+      bookSideMate,
+      bookMate,
+      bookSideMate,
+    ]);
+    bookMesh.translateX(-x + 2 + index * (width + 0.5));
+    bookMesh.translateZ(z);
+    bookMesh.translateY(y + height / 2);
+    sceneObj.current.add(bookMesh);
+    animate();
   };
 
   useEffect(() => {
