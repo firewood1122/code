@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import * as Three from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import woodPng from "./imgs/wood.jpg";
 import bookPng from "./imgs/book.jpg";
 import bookSidePng from "./imgs/book-side.jpg";
@@ -62,11 +62,9 @@ const App = () => {
     target.appendChild(renderer.domElement);
 
     // 初始化控制器
-    const controls = new OrbitControls(camera, renderer.domElement);
-    // controls.enableRotate = false;
+    const controls = new MapControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 200;
-    controls.screenSpacePanning = true;
     controls.addEventListener("change", animate);
 
     sceneObj.current = scene;
