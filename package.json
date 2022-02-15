@@ -61,7 +61,8 @@
     "normalize.css": "^8.0.1",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "three": "^0.136.0"
+    "three": "^0.136.0",
+    "three-mesh-ui": "^6.3.1"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": "eslint --cache --fix",

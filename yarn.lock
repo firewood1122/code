@@ -6568,6 +6568,11 @@ thenify-all@^1.0.0:
   dependencies:
     any-promise "^1.0.0"
 
+three-mesh-ui@^6.3.1:
+  version "6.3.1"
+  resolved "https://registry.npmjs.org/three-mesh-ui/-/three-mesh-ui-6.3.1.tgz#7927b3ffcc14ebe5718e1145b64d4bed3ac4f9be"
+  integrity sha512-4skFXqM8hwK/z9HuJZV97++v+YA61k7AmHcIFjpWuPbuojwvpwfKBab0jtjD0UycTYvS107xhJUitkoNZ4Nteg==
+
 three@^0.136.0:
   version "0.136.0"
   resolved "https://registry.npmjs.org/three/-/three-0.136.0.tgz#b1504db021b46398ef468aa7849f3dcabb814f50"

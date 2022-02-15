@@ -1,11 +1,14 @@
 import React, { useRef, useEffect } from "react";
 import * as Three from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import ThreeMeshUI from "three-mesh-ui";
+import FontFamily from "three-mesh-ui/examples/assets/Roboto-msdf.json";
+import FontTexture from "three-mesh-ui/examples/assets/Roboto-msdf.png";
 import TWEEN, { Tween } from "@tweenjs/tween.js";
-import woodPng from "./imgs/wood.jpg";
-import bookPng from "./imgs/book.jpg";
-import bookSidePng from "./imgs/book-side.jpg";
-import bookList from "./data.json";
+import WoodPng from "./imgs/wood.jpg";
+import BookPng from "./imgs/book.jpg";
+import BookSidePng from "./imgs/book-side.jpg";
+import BookList from "./data.json";
 import "./app.scss";
 
 interface BookItemType {
@@ -30,6 +33,7 @@ const App = () => {
    */
   const animate = () => {
     const _animate = () => {
+      ThreeMeshUI.update();
       const renderer = rendererObj.current;
       const scene = sceneObj.current;
       const camera = cameraObj.current;
@@ -48,7 +52,7 @@ const App = () => {
    * 处理动画渲染
    */
   const handleTween = (
-    tween: Tween<{ [key: string]: string }>,
+    tween: Tween<{ [key: string]: string | number }>,
     onComplete: () => void = null
   ) => {
     tween.onComplete(() => {
@@ -75,7 +79,7 @@ const App = () => {
       1,
       1000
     );
-    camera.position.set(0, 0, 60);
+    camera.position.set(0, 0, 50);
     camera.lookAt(0, 0, 0);
 
     // 初始化渲染器
@@ -115,12 +119,12 @@ const App = () => {
    * 渲染书架
    */
   const renderBookCase = () => {
-    const width = 40;
+    const width = 30;
     const height = 60;
     const thickness = 2;
     const depth = 10;
 
-    new Three.TextureLoader().load(woodPng, (texture) => {
+    new Three.TextureLoader().load(WoodPng, (texture) => {
       const material = new Three.MeshBasicMaterial({ map: texture });
 
       // 书架背面
@@ -158,7 +162,7 @@ const App = () => {
         if (i > 0) {
           const bookHeight = distance - 4;
           const bookDepth = depth - thickness;
-          bookList[i - 1].forEach((bookItem: BookItemType, index: number) => {
+          BookList[i - 1].forEach((bookItem: BookItemType, index: number) => {
             renderBook(
               width / 2,
               item.position.y + thickness / 2,
@@ -200,8 +204,8 @@ const App = () => {
     item: BookItemType
   ) => {
     const [book, bookSide] = await Promise.all([
-      loadTexture(bookPng),
-      loadTexture(bookSidePng),
+      loadTexture(BookPng),
+      loadTexture(BookSidePng),
     ]);
 
     // 书本材质
@@ -221,11 +225,37 @@ const App = () => {
     bookMesh.translateX(-x + 2 + index * (width + 0.5));
     bookMesh.translateZ(z);
     bookMesh.translateY(y + height / 2);
-    bookMesh.userData = { ...item };
 
-    sceneObj.current.add(bookMesh);
+    // 构建书本对象
+    const bookObj = new Three.Object3D();
+    sceneObj.current.add(bookObj);
+    bookMesh.userData = { ...item, uuid: bookObj.uuid };
+    bookObj.add(bookMesh);
     bookListObj.current.push(bookMesh);
-    animate();
+
+    // 渲染书本名称
+    const container: any = new ThreeMeshUI.Block({
+      width,
+      height,
+      padding: 1,
+      backgroundOpacity: 0,
+      contentDirection: "column",
+      alignContent: "center",
+      justifyContent: "center",
+      fontFamily: FontFamily as any,
+      fontTexture: FontTexture,
+    });
+    const pos = bookMesh.position;
+    container.position.set(pos.x, pos.y, pos.z + 4);
+    bookObj.add(container);
+    const text = new ThreeMeshUI.Text({
+      content: "HTML base",
+      fontSize: 1,
+    });
+    container.add(text);
+    setTimeout(() => {
+      animate();
+    }, 200);
   };
 
   /**
@@ -234,37 +264,43 @@ const App = () => {
   const openBook = (book: Three.Mesh) => {
     // 移出
     const { x, y } = centerPoint.current;
-    const initPosition = { ...book.position };
-    const tweenA = new Tween(book.position)
-      .to({ x, y, z: "+10" }, 400)
+    const bookMesh = book.children.find((item) => item.type === "Mesh");
+    const tweenA = new Tween(bookMesh.position)
+      .to({ x, y, z: "+8" }, 300)
       .onStart(() => {
         handleTween(tweenA);
       })
       .onUpdate((obj) => {
-        book.position.z = obj.z;
+        book.children.forEach((item) => {
+          if (item.type === "Mesh") {
+            item.position.z = obj.z;
+          } else {
+            item.position.x = obj.x;
+            item.position.y = obj.y;
+            item.position.z = obj.z + 4;
+          }
+        });
       });
     tweenA.start().update();
 
     // 翻转
-    const initRotationY = book.rotation.y;
-    const tweenB = new Tween(book.rotation)
+    const tweenB = new Tween({ y: 0 })
       .to({ y: -Math.PI / 2 }, 400)
       .onStart(() => {
         handleTween(tweenB, () => {
           // 跳转对应页面
-          setTimeout(() => {
-            currentBook.current = null;
-            const { x, y, z } = initPosition;
-            book.position.x = x;
-            book.position.y = y;
-            book.position.z = z;
-            book.rotation.y = initRotationY;
-            animate();
-          }, 500);
+          // setTimeout(() => {
+          // }, 500);
         });
       })
       .onUpdate((obj) => {
-        book.rotation.y = obj.y;
+        book.children.forEach((item) => {
+          if (item.type === "Mesh") {
+            item.rotation.y = obj.y;
+          } else {
+            book.remove(item);
+          }
+        });
       });
     tweenA.chain(tweenB);
   };
@@ -300,7 +336,11 @@ const App = () => {
         // do nothing
       } else {
         currentBook.current = bookMesh.userData;
-        openBook(bookMesh);
+        const parent = sceneObj.current.getObjectByProperty(
+          "uuid",
+          userData.uuid
+        );
+        openBook(parent);
       }
     }
   };
