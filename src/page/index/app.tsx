@@ -21,7 +21,9 @@ const App = () => {
   const rendererObj = useRef(null);
   const controlsObj = useRef(null);
   const bookListObj = useRef([]);
+  const currentBook = useRef(null);
   const tweenAnimate = useRef(false);
+  const centerPoint = useRef(null);
 
   /**
    * 调用渲染
@@ -40,6 +42,21 @@ const App = () => {
       }
     };
     requestAnimationFrame(_animate);
+  };
+
+  /**
+   * 处理动画渲染
+   */
+  const handleTween = (
+    tween: Tween<{ [key: string]: string }>,
+    onComplete: () => void = null
+  ) => {
+    tween.onComplete(() => {
+      tweenAnimate.current = false;
+      onComplete && onComplete();
+    });
+    tweenAnimate.current = true;
+    animate();
   };
 
   /**
@@ -159,6 +176,13 @@ const App = () => {
       bookCase.add(left);
       bookCase.add(right);
       sceneObj.current.add(bookCase);
+
+      // 获取中心点
+      const box = new Three.Box3();
+      box.expandByObject(bookCase);
+      const center = new Three.Vector3();
+      box.getCenter(center);
+      centerPoint.current = center;
       animate();
     });
   };
@@ -205,23 +229,14 @@ const App = () => {
   };
 
   /**
-   * 处理动画渲染
-   */
-  const handleTween = (tween: Tween<{ [key: string]: string }>) => {
-    tween.onComplete(() => {
-      tweenAnimate.current = false;
-    });
-    tweenAnimate.current = true;
-    animate();
-  };
-
-  /**
    * 打开书本
    */
   const openBook = (book: Three.Mesh) => {
     // 移出
+    const { x, y } = centerPoint.current;
+    const initPosition = { ...book.position };
     const tweenA = new Tween(book.position)
-      .to({ z: "+10" }, 400)
+      .to({ x, y, z: "+10" }, 400)
       .onStart(() => {
         handleTween(tweenA);
       })
@@ -231,10 +246,22 @@ const App = () => {
     tweenA.start().update();
 
     // 翻转
+    const initRotationY = book.rotation.y;
     const tweenB = new Tween(book.rotation)
       .to({ y: -Math.PI / 2 }, 400)
       .onStart(() => {
-        handleTween(tweenB);
+        handleTween(tweenB, () => {
+          // 跳转对应页面
+          setTimeout(() => {
+            currentBook.current = null;
+            const { x, y, z } = initPosition;
+            book.position.x = x;
+            book.position.y = y;
+            book.position.z = z;
+            book.rotation.y = initRotationY;
+            animate();
+          }, 500);
+        });
       })
       .onUpdate((obj) => {
         book.rotation.y = obj.y;
@@ -246,6 +273,8 @@ const App = () => {
    * 选择书本
    */
   const selectBook = (e) => {
+    if (currentBook.current) return; // 每次只能打开一本书
+
     const map = mapDom.current;
     const camera = cameraObj.current;
     const bookList = bookListObj.current;
@@ -262,7 +291,17 @@ const App = () => {
     const intersects = raycasterObj.intersectObjects(bookList);
     if (intersects.length > 0) {
       const bookMesh = intersects[0].object;
-      openBook(bookMesh);
+      const { userData } = bookMesh;
+      if (
+        userData &&
+        currentBook.current &&
+        userData.title === currentBook.current.title
+      ) {
+        // do nothing
+      } else {
+        currentBook.current = bookMesh.userData;
+        openBook(bookMesh);
+      }
     }
   };
 
