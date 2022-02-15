@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import * as Three from "three";
-import { MapControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import TWEEN, { Tween } from "@tweenjs/tween.js";
 import woodPng from "./imgs/wood.jpg";
 import bookPng from "./imgs/book.jpg";
 import bookSidePng from "./imgs/book-side.jpg";
@@ -19,6 +20,8 @@ const App = () => {
   const cameraObj = useRef(null);
   const rendererObj = useRef(null);
   const controlsObj = useRef(null);
+  const bookListObj = useRef([]);
+  const tweenAnimate = useRef(false);
 
   /**
    * 调用渲染
@@ -29,6 +32,12 @@ const App = () => {
       const scene = sceneObj.current;
       const camera = cameraObj.current;
       renderer.render(scene, camera);
+
+      // 渲染动画
+      if (tweenAnimate.current) {
+        TWEEN.update();
+        animate();
+      }
     };
     requestAnimationFrame(_animate);
   };
@@ -62,7 +71,7 @@ const App = () => {
     target.appendChild(renderer.domElement);
 
     // 初始化控制器
-    const controls = new MapControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 200;
     controls.addEventListener("change", animate);
@@ -188,8 +197,73 @@ const App = () => {
     bookMesh.translateX(-x + 2 + index * (width + 0.5));
     bookMesh.translateZ(z);
     bookMesh.translateY(y + height / 2);
+    bookMesh.userData = { ...item };
+
     sceneObj.current.add(bookMesh);
+    bookListObj.current.push(bookMesh);
     animate();
+  };
+
+  /**
+   * 处理动画渲染
+   */
+  const handleTween = (tween: Tween<{ [key: string]: string }>) => {
+    tween.onComplete(() => {
+      tweenAnimate.current = false;
+    });
+    tweenAnimate.current = true;
+    animate();
+  };
+
+  /**
+   * 打开书本
+   */
+  const openBook = (book: Three.Mesh) => {
+    // 移出
+    const tweenA = new Tween(book.position)
+      .to({ z: "+10" }, 400)
+      .onStart(() => {
+        handleTween(tweenA);
+      })
+      .onUpdate((obj) => {
+        book.position.z = obj.z;
+      });
+    tweenA.start().update();
+
+    // 翻转
+    const tweenB = new Tween(book.rotation)
+      .to({ y: -Math.PI / 2 }, 400)
+      .onStart(() => {
+        handleTween(tweenB);
+      })
+      .onUpdate((obj) => {
+        book.rotation.y = obj.y;
+      });
+    tweenA.chain(tweenB);
+  };
+
+  /**
+   * 选择书本
+   */
+  const selectBook = (e) => {
+    const map = mapDom.current;
+    const camera = cameraObj.current;
+    const bookList = bookListObj.current;
+
+    const x = (e.clientX / map.clientWidth) * 2 - 1;
+    const y = -(e.clientY / map.clientHeight) * 2 + 1;
+    const vector = new Three.Vector3(x, y, 0).unproject(camera);
+    const raycasterObj = new Three.Raycaster(
+      camera.position,
+      vector.sub(camera.position).normalize()
+    );
+    raycasterObj.camera = camera;
+
+    const intersects = raycasterObj.intersectObjects(bookList);
+    if (intersects.length > 0) {
+      const bookMesh = intersects[0].object;
+      openBook(bookMesh);
+    }
   };
 
   useEffect(() => {
@@ -203,6 +277,7 @@ const App = () => {
       ref={(item) => {
         mapDom.current = item;
       }}
+      onClick={selectBook}
     ></div>
   );
 };
