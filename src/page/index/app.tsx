@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from "react";
 import * as Three from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import ThreeMeshUI from "three-mesh-ui";
-import FontFamily from "three-mesh-ui/examples/assets/Roboto-msdf.json";
-import FontTexture from "three-mesh-ui/examples/assets/Roboto-msdf.png";
+import FontFamily from "./fonts/custom.json";
+import FontTexture from "./fonts/custom.png";
 import TWEEN, { Tween } from "@tweenjs/tween.js";
 import WoodPng from "./imgs/wood.jpg";
 import BookPng from "./imgs/book.jpg";
@@ -92,9 +92,11 @@ const App = () => {
     target.appendChild(renderer.domElement);
 
     // 初始化控制器
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new MapControls(camera, renderer.domElement);
     controls.minDistance = 10;
     controls.maxDistance = 200;
+    controls.enableRotate = false;
+    controls.screenSpacePanning = true;
     controls.addEventListener("change", animate);
 
     sceneObj.current = scene;
@@ -248,11 +250,24 @@ const App = () => {
     const pos = bookMesh.position;
     container.position.set(pos.x, pos.y, pos.z + 4);
     bookObj.add(container);
-    const text = new ThreeMeshUI.Text({
-      content: "HTML base",
-      fontSize: 1,
+
+    // 拼装书本名称
+    item.title.split("").forEach((char: string) => {
+      const charContainer: any = new ThreeMeshUI.Block({
+        width: 1,
+        height: 1,
+        backgroundOpacity: 0,
+        alignContent: "center",
+        justifyContent: "center",
+      });
+      const text = new ThreeMeshUI.Text({
+        content: char,
+        fontSize: 0.8,
+      });
+      charContainer.add(text);
+      container.add(charContainer);
     });
-    container.add(text);
+
     setTimeout(() => {
       animate();
     }, 200);

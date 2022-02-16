@@ -1,41 +1,41 @@
 [
   [
     {
-      "title": "Html基础知识",
+      "title": "HTML基础",
       "url": ""
     },
     {
-      "title": "Css基础知识",
+      "title": "CSS基础",
       "url": ""
     },
     {
-      "title": "Javascript基础知识",
+      "title": "JS基础",
       "url": ""
     },
     {
-      "title": "服务端基础知识",
+      "title": "服务端基础",
       "url": ""
     }
   ],
   [
     {
-      "title": "React hook使用教程",
+      "title": "REACT HOOK",
       "url": ""
     },
     {
-      "title": "React router使用教程",
+      "title": "REACT 路由管理",
       "url": ""
     },
     {
-      "title": "Redux使用教程",
+      "title": "REACT 状态管理",
       "url": ""
     },
     {
-      "title": "React源码解析",
+      "title": "REACT 源码解析",
       "url": ""
     },
     {
-      "title": "Three.js使用教程",
+      "title": "THREE 入门教程",
       "url": ""
     }
   ],
