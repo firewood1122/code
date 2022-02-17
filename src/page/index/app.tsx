@@ -93,8 +93,8 @@ const App = () => {
 
     // 初始化控制器
     const controls = new MapControls(camera, renderer.domElement);
-    controls.minDistance = 10;
-    controls.maxDistance = 200;
+    controls.minDistance = 30;
+    controls.maxDistance = 50;
     controls.enableRotate = false;
     controls.screenSpacePanning = true;
     controls.addEventListener("change", animate);
@@ -355,7 +355,10 @@ const App = () => {
           "uuid",
           userData.uuid
         );
-        openBook(parent);
+        controlsObj.current.reset();
+        setTimeout(() => {
+          openBook(parent);
+        }, 200);
       }
     }
   };
